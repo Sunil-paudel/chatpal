@@ -24,6 +24,7 @@ export function ChatDisplay({ messages, isLoading }: ChatDisplayProps) {
 
 
   return (
+    // Pass viewportRef prop correctly to the ScrollArea component
     <ScrollArea className="flex-grow h-0 p-4" viewportRef={viewportRef} ref={scrollAreaRef}>
       <div className="flex flex-col gap-4 pb-4">
         {messages.map((message) => (
