@@ -14,7 +14,8 @@ export function ChatContainer() {
     clearChat,
     editChat,
     showHistory,
-    deleteChat
+    deleteChat,
+    handleAction // Get handleAction from the hook
   } = useChat();
 
   // Note: User Login (NextAuth) is not implemented here, assumed to be handled at a higher level or page route.
@@ -27,7 +28,8 @@ export function ChatContainer() {
         onShowHistory={showHistory}
         onDeleteChat={deleteChat}
       />
-      <ChatDisplay messages={messages} isLoading={isLoading} />
+      {/* Pass handleAction down to ChatDisplay */}
+      <ChatDisplay messages={messages} isLoading={isLoading} handleAction={handleAction} />
       <ChatInput onSendMessage={sendMessage} isLoading={isLoading} />
     </Card>
   );

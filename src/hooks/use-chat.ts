@@ -17,6 +17,34 @@ export function useChat() {
     setMessages((prevMessages) => [...prevMessages, message]);
   }, []);
 
+  // Function to handle clicks on interactive prompts
+  const handleAction = useCallback((actionId: string, messageId: string) => {
+    let responseContent = '';
+    if (actionId === 'continue_chat') {
+        responseContent = "Okay, how can I help you today?";
+    } else if (actionId === 'know_developer') {
+        responseContent = "Sunil Paudel is my developer.";
+    }
+
+    if (responseContent) {
+        const actionResponseMessage: Message = {
+            id: crypto.randomUUID(),
+            role: 'assistant',
+            content: responseContent,
+        };
+        addMessage(actionResponseMessage);
+    }
+
+    // Remove actions from the original message after one is clicked
+    setMessages((prevMessages) =>
+      prevMessages.map((msg) =>
+        msg.id === messageId ? { ...msg, actions: undefined } : msg
+      )
+    );
+
+  }, [addMessage]);
+
+
   const sendMessage = useCallback(async (content: string) => {
     if (isLoading || !content.trim()) return;
 
@@ -27,23 +55,24 @@ export function useChat() {
     };
     addMessage(userMessage);
 
-    // Check if the user message is "hi" (case-insensitive)
+    // Handle "hi" specifically to show interactive prompts
     if (content.trim().toLowerCase() === 'hi') {
-      const systemPromptMessage: Message = {
+      const interactiveMessage: Message = {
         id: crypto.randomUUID(),
         role: 'assistant',
-        // Reveal the system context instead of calling the AI
-        content: `👋 Hello! I'm MyAI Pal.\n\n*System Prompt:*\n"${systemContext}"`,
+        content: '👋 Hello! How can I assist you?', // Initial greeting part
+        actions: [
+            { label: 'Continue', actionId: 'continue_chat' },
+            { label: 'Know the developer', actionId: 'know_developer' },
+        ],
       };
-      addMessage(systemPromptMessage);
+      addMessage(interactiveMessage);
       return; // Exit early, don't call the AI
     }
 
     setIsLoading(true);
 
-    // Prepare chat history for the AI flow (excluding the current "hi" message if it was that)
-    // Filter out the user's "hi" message from history sent to AI if needed, but it's already handled above.
-    // For other messages, include history up to the message before the current one.
+    // Prepare chat history for the AI flow
     const chatHistory: ChatHistoryItem[] = messages
       .filter(msg => msg.id !== userMessage.id) // Exclude the current user message before sending history
       .map((msg) => ({
@@ -82,13 +111,11 @@ export function useChat() {
 
   const clearChat = useCallback(() => {
     setMessages([]);
-    // Optionally add a system message indicating a new chat context starts
-    // addMessage({ id: crypto.randomUUID(), role: 'assistant', content: "New chat started. How can I help?" });
      toast({
       title: 'New Chat',
       description: 'Previous conversation cleared.',
     });
-  }, [toast]); // Removed addMessage dependency if not adding system message
+  }, [toast]);
 
   const editChat = useCallback(() => {
     // Placeholder for edit functionality
@@ -122,7 +149,6 @@ export function useChat() {
     editChat,
     showHistory,
     deleteChat,
-    // Optionally expose systemContext if it needs to be displayed or modified
-    // systemContext,
+    handleAction, // Expose handleAction
   };
 }
