@@ -26,13 +26,31 @@ export function useChat() {
       content: content.trim(),
     };
     addMessage(userMessage);
+
+    // Check if the user message is "hi" (case-insensitive)
+    if (content.trim().toLowerCase() === 'hi') {
+      const systemPromptMessage: Message = {
+        id: crypto.randomUUID(),
+        role: 'assistant',
+        // Reveal the system context instead of calling the AI
+        content: `👋 Hello! I'm MyAI Pal.\n\n*System Prompt:*\n"${systemContext}"`,
+      };
+      addMessage(systemPromptMessage);
+      return; // Exit early, don't call the AI
+    }
+
     setIsLoading(true);
 
-    // Prepare chat history for the AI flow
-    const chatHistory: ChatHistoryItem[] = messages.map((msg) => ({
-      role: msg.role,
-      content: msg.content,
-    }));
+    // Prepare chat history for the AI flow (excluding the current "hi" message if it was that)
+    // Filter out the user's "hi" message from history sent to AI if needed, but it's already handled above.
+    // For other messages, include history up to the message before the current one.
+    const chatHistory: ChatHistoryItem[] = messages
+      .filter(msg => msg.id !== userMessage.id) // Exclude the current user message before sending history
+      .map((msg) => ({
+        role: msg.role,
+        content: msg.content,
+     }));
+
 
     try {
       // Pass the system context to the chat completion flow
