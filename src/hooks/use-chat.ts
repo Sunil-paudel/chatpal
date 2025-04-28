@@ -3,10 +3,15 @@ import type { Message, ChatHistoryItem } from '@/lib/types';
 import { chatCompletion } from '@/ai/flows/chat-completion';
 import { useToast } from '@/hooks/use-toast';
 
+// Define a default system context
+const DEFAULT_SYSTEM_CONTEXT = "You are MyAI Pal, a friendly, helpful, and slightly witty personal AI assistant. Keep your responses concise and informative unless asked for more detail.";
+
 export function useChat() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
+  // Optionally, allow setting the system context via state if needed later
+  const [systemContext] = useState<string>(DEFAULT_SYSTEM_CONTEXT);
 
   const addMessage = useCallback((message: Message) => {
     setMessages((prevMessages) => [...prevMessages, message]);
@@ -30,7 +35,12 @@ export function useChat() {
     }));
 
     try {
-      const aiResponse = await chatCompletion({ message: content.trim(), chatHistory });
+      // Pass the system context to the chat completion flow
+      const aiResponse = await chatCompletion({
+        message: content.trim(),
+        systemContext: systemContext, // Include system context
+        chatHistory
+      });
 
       const assistantMessage: Message = {
         id: crypto.randomUUID(),
@@ -50,11 +60,17 @@ export function useChat() {
     } finally {
       setIsLoading(false);
     }
-  }, [messages, isLoading, addMessage, toast]);
+  }, [messages, isLoading, addMessage, toast, systemContext]); // Add systemContext to dependencies
 
   const clearChat = useCallback(() => {
     setMessages([]);
-  }, []);
+    // Optionally add a system message indicating a new chat context starts
+    // addMessage({ id: crypto.randomUUID(), role: 'assistant', content: "New chat started. How can I help?" });
+     toast({
+      title: 'New Chat',
+      description: 'Previous conversation cleared.',
+    });
+  }, [toast]); // Removed addMessage dependency if not adding system message
 
   const editChat = useCallback(() => {
     // Placeholder for edit functionality
@@ -77,12 +93,8 @@ export function useChat() {
   const deleteChat = useCallback(() => {
     // Placeholder for deleting chat - for now, just clears
     console.log("Delete chat requested");
-    clearChat();
-    toast({
-      title: 'Chat Cleared',
-      description: 'Current chat has been cleared.',
-    });
-  }, [clearChat, toast]);
+    clearChat(); // Re-use clearChat logic
+  }, [clearChat]); // Dependency updated to clearChat
 
   return {
     messages,
@@ -92,5 +104,7 @@ export function useChat() {
     editChat,
     showHistory,
     deleteChat,
+    // Optionally expose systemContext if it needs to be displayed or modified
+    // systemContext,
   };
 }

@@ -15,6 +15,7 @@ import type { ChatHistoryItem } from '@/lib/types'; // Import ChatHistoryItem ty
 // Use the imported ChatHistoryItem for consistency
 const ChatCompletionInputSchema = z.object({
   message: z.string().describe('The message to send to the AI.'),
+  systemContext: z.string().optional().describe('Initial context or instructions for the AI.'),
   chatHistory: z.array(z.object({
     role: z.enum(['user', 'assistant']),
     content: z.string(),
@@ -34,8 +35,10 @@ export async function chatCompletion(input: ChatCompletionInput): Promise<ChatCo
 const prompt = ai.definePrompt({
   name: 'chatCompletionPrompt',
   input: {
+    // Schema now includes systemContext
     schema: z.object({
       message: z.string().describe('The message to send to the AI.'),
+      systemContext: z.string().optional().describe('Initial context or instructions for the AI.'),
       // Update schema to use consistent role enum
       chatHistory: z.array(z.object({
         role: z.enum(['user', 'assistant']),
@@ -48,16 +51,20 @@ const prompt = ai.definePrompt({
       response: z.string().describe('The response from the AI.'),
     }),
   },
-  // Updated prompt to better reflect the assistant's role and use history
-  prompt: `You are MyAI Pal, a friendly and helpful personal AI assistant.
+  // Updated prompt to include system context if provided
+  prompt: `{{#if systemContext}}
+System Context: {{{systemContext}}}
+
+{{/if}}
+You are MyAI Pal, a friendly and helpful personal AI assistant.
 Respond to the user's message below. Use the provided chat history to understand the context and provide relevant, coherent, and engaging responses.
 
-{% if chatHistory %}
+{{#if chatHistory}}
 Chat History (Oldest to Newest):
 {{#each chatHistory}}
 {{role}}: {{content}}
 {{/each}}
-{% endif %}
+{{/if}}
 
 Current User Message: {{{message}}}
 
@@ -72,11 +79,11 @@ const chatCompletionFlow = ai.defineFlow<
   inputSchema: ChatCompletionInputSchema,
   outputSchema: ChatCompletionOutputSchema,
 }, async input => {
-  // Ensure chatHistory is passed to the prompt correctly
+  // Ensure all inputs are passed to the prompt correctly
   const {output} = await prompt({
       message: input.message,
+      systemContext: input.systemContext,
       chatHistory: input.chatHistory
   });
   return output!;
 });
-
