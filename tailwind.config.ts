@@ -9,6 +9,10 @@ export default {
   ],
   theme: {
   	extend: {
+      fontFamily: {
+        sans: ["var(--font-geist-sans)", 'sans-serif'], // Add fallback
+        mono: ["var(--font-geist-mono)", 'monospace'], // Add fallback
+      },
   		colors: {
   			background: 'hsl(var(--background))',
   			foreground: 'hsl(var(--foreground))',
@@ -82,13 +86,29 @@ export default {
   				to: {
   					height: '0'
   				}
-  			}
+  			},
+           'message-appear': {
+            '0%': { opacity: '0', transform: 'translateY(10px) scale(0.95)' },
+            '100%': { opacity: '1', transform: 'translateY(0) scale(1)' },
+          },
+          'typing-dot': { // Define base keyframe
+            '0%, 80%, 100%': { opacity: '0', transform: 'scale(0.8)' },
+            '40%': { opacity: '1', transform: 'scale(1)' },
+          },
   		},
   		animation: {
   			'accordion-down': 'accordion-down 0.2s ease-out',
-  			'accordion-up': 'accordion-up 0.2s ease-out'
+  			'accordion-up': 'accordion-up 0.2s ease-out',
+        'message-appear': 'message-appear 0.3s cubic-bezier(0.25, 0.1, 0.25, 1) forwards',
+        // Apply base keyframe with different delays
+        'typing-dot-1': 'typing-dot 1.4s infinite ease-in-out -0.32s both',
+        'typing-dot-2': 'typing-dot 1.4s infinite ease-in-out -0.16s both',
+        'typing-dot-3': 'typing-dot 1.4s infinite ease-in-out 0s both',
   		}
   	}
   },
-  plugins: [require("tailwindcss-animate")],
+  plugins: [
+    require("tailwindcss-animate"),
+    require("@tailwindcss/typography") // Add typography plugin
+    ],
 } satisfies Config;
